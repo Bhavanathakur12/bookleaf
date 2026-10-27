@@ -50,6 +50,17 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
     }
   };
 
+  // Lock body scroll while modal is open to prevent background page scrolling
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen && ticketId) {
       setLoading(true);
@@ -60,10 +71,6 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
       return () => clearInterval(interval);
     }
   }, [isOpen, ticketId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [ticketData?.messages]);
 
   const { ticket, messages = [], notes = [] } = ticketData || {};
 
@@ -168,6 +175,10 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
       setReplyMessage('');
       await fetchDossier();
       if (onTicketUpdated) onTicketUpdated();
+      // Scroll to the latest message only after admin explicitly sends a reply
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     } catch (err) {
       alert(`Failed to send reply: ${err.message}`);
     } finally {
@@ -179,9 +190,9 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
 
   return (
     <div className="modal-overlay">
-      <div className="modal-window" style={{ maxWidth: '1240px', height: '92vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="modal-window" style={{ maxWidth: '1240px', height: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Workspace Top Header */}
-        <div className="modal-header" style={{ padding: '1rem 1.5rem', background: '#0e1626' }}>
+        <div className="modal-header" style={{ padding: '1rem 1.5rem', background: '#0e1626', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700, color: '#818cf8' }}>
               {ticket?.ticket_number}

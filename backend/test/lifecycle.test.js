@@ -1,7 +1,7 @@
 import assert from 'assert';
 import db from '../src/db/db.js';
 
-const BASE_URL = 'http://localhost:4000';
+const BASE_URL = process.env.TEST_API_URL || 'http://127.0.0.1:4000';
 
 console.log('--- RUNNING TICKET LIFECYCLE & PENDING-RESPONSE WORKFLOW TEST SUITE ---');
 

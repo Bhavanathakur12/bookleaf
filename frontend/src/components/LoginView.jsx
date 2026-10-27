@@ -105,7 +105,7 @@ export function LoginView() {
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. priya.sharma@email.com or admin@bookleafpublishing.com"
+              placeholder="enter your email id"
               required
               autoFocus
             />

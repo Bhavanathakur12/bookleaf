@@ -8,6 +8,9 @@ export function TicketThreadModal({ ticketId, isOpen, onClose, onTicketUpdated }
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
+  const prevMessagesCountRef = useRef(0);
+  const initialScrollDoneRef = useRef(false);
+  const shouldScrollOnReplyRef = useRef(false);
 
   const fetchThread = async () => {
     if (!ticketId) return;
@@ -20,8 +23,21 @@ export function TicketThreadModal({ ticketId, isOpen, onClose, onTicketUpdated }
     }
   };
 
+  // Lock body scroll while modal is open to prevent background page scrolling
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen && ticketId) {
+      initialScrollDoneRef.current = false;
+      prevMessagesCountRef.current = 0;
       setLoading(true);
       fetchThread();
 
@@ -32,7 +48,23 @@ export function TicketThreadModal({ ticketId, isOpen, onClose, onTicketUpdated }
   }, [isOpen, ticketId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!ticketData?.messages) return;
+    const currentCount = ticketData.messages.length;
+
+    if (!initialScrollDoneRef.current && currentCount > 0) {
+      // First load of the thread: scroll to bottom once
+      initialScrollDoneRef.current = true;
+      prevMessagesCountRef.current = currentCount;
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+    } else if (shouldScrollOnReplyRef.current) {
+      // Author just sent a reply: scroll to newly added message
+      shouldScrollOnReplyRef.current = false;
+      prevMessagesCountRef.current = currentCount;
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else if (currentCount > prevMessagesCountRef.current) {
+      // New incoming message while open: update count ref without disrupting reading scroll position
+      prevMessagesCountRef.current = currentCount;
+    }
   }, [ticketData?.messages]);
 
   if (!isOpen) return null;
@@ -45,6 +77,7 @@ export function TicketThreadModal({ ticketId, isOpen, onClose, onTicketUpdated }
     try {
       await api.sendAuthorMessage(ticketId, replyText.trim());
       setReplyText('');
+      shouldScrollOnReplyRef.current = true;
       await fetchThread();
       if (onTicketUpdated) onTicketUpdated();
     } catch (err) {
@@ -58,9 +91,9 @@ export function TicketThreadModal({ ticketId, isOpen, onClose, onTicketUpdated }
 
   return (
     <div className="modal-overlay">
-      <div className="modal-window" style={{ maxWidth: '850px', height: '85vh' }}>
+      <div className="modal-window" style={{ maxWidth: '850px', height: '85vh', overflow: 'hidden' }}>
         {/* Modal Header */}
-        <div className="modal-header">
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.825rem', color: '#818cf8', fontWeight: 600 }}>
