@@ -152,8 +152,10 @@ npm run dev
    ```
 
 ### 5.6 Accessing the Application
-- **Frontend App:** [http://localhost:5173](http://localhost:5173)
-- **API Health:** [http://localhost:4000/api/health](http://localhost:4000/api/health) (Shows `database: "connected (MySQL)"`)
+- **Live Deployed URL:** [https://bookleaf-khsz.onrender.com](https://bookleaf-khsz.onrender.com)
+- **Live Health Check:** [https://bookleaf-khsz.onrender.com/api/health](https://bookleaf-khsz.onrender.com/api/health) (Shows `database: "connected (MySQL)"`)
+- **Local Dev App:** [http://localhost:5173](http://localhost:5173)
+- **Local Health Check:** [http://localhost:4000/api/health](http://localhost:4000/api/health)
 - **API Specification:** [http://localhost:4000/api/docs/spec](http://localhost:4000/api/docs/spec)
 
 ### 5.7 Running Verification Tests
