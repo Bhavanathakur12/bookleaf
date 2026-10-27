@@ -40,8 +40,8 @@ export async function runSeed() {
     await conn.query('ALTER TABLE ticket_messages AUTO_INCREMENT = 1');
     await conn.query('ALTER TABLE ticket_internal_notes AUTO_INCREMENT = 1');
 
-    const passwordHash = bcrypt.hashSync('author123', 10);
     const adminPasswordHash = bcrypt.hashSync('admin123', 10);
+    const supportPasswordHash = bcrypt.hashSync('support123', 10);
 
     // 1. Create Admin Users
     const insertUserQuery = `
@@ -50,7 +50,7 @@ export async function runSeed() {
     `;
 
     await conn.query(insertUserQuery, ['admin@bookleafpublishing.com', adminPasswordHash, 'admin', null, 'Operations Admin']);
-    await conn.query(insertUserQuery, ['support@bookleafpublishing.com', adminPasswordHash, 'admin', null, 'Author Support Lead']);
+    await conn.query(insertUserQuery, ['support@bookleafpublishing.com', supportPasswordHash, 'admin', null, 'Author Support Lead']);
 
     // 2. Insert Authors & Author Users & Books
     const insertAuthorQuery = `
@@ -79,8 +79,11 @@ export async function runSeed() {
         author.joined_date || null
       ]);
 
-      // Create user login for this author
-      await conn.query(insertUserQuery, [author.email, passwordHash, 'author', author.author_id, author.name]);
+      // Create user login for this author with unique, simple password (<firstname>123)
+      const firstName = author.name.trim().split(' ')[0].toLowerCase();
+      const uniqueAuthorPassword = `${firstName}123`;
+      const authorPasswordHash = bcrypt.hashSync(uniqueAuthorPassword, 10);
+      await conn.query(insertUserQuery, [author.email, authorPasswordHash, 'author', author.author_id, author.name]);
 
       if (author.books && Array.isArray(author.books)) {
         for (const book of author.books) {
