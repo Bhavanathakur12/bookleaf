@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  ArrowLeft,
   X,
   Send,
   Sparkles,
@@ -50,7 +51,7 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
     }
   };
 
-  // Lock body scroll while modal is open to prevent background page scrolling
+  // Lock body scroll while workspace is open to prevent background page scrolling
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
@@ -60,6 +61,17 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
       };
     }
   }, [isOpen]);
+
+  // Handle ESC key to return to ticket queue
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (isOpen && ticketId) {
@@ -189,23 +201,45 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-window" style={{ maxWidth: '1240px', height: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Workspace Top Header */}
-        <div className="modal-header" style={{ padding: '1rem 1.5rem', background: '#0e1626', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700, color: '#818cf8' }}>
-              {ticket?.ticket_number}
-            </span>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{ticket?.subject}</h2>
+    <div className="admin-workspace-page">
+      {/* Workspace Top Header */}
+      <div className="admin-workspace-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+          {/* Back to Queue Navigation Button */}
+          <button
+            id="btn-back-to-queue"
+            type="button"
+            className="btn btn-secondary"
+            onClick={onClose}
+            style={{
+              padding: '0.35rem 0.75rem',
+              fontSize: '0.775rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: '#1e293b',
+              color: '#f8fafc',
+              border: '1px solid #334155'
+            }}
+            title="Return to Ticket Queue (Esc)"
+          >
+            <ArrowLeft size={14} /> Back to Queue
+          </button>
 
-            {/* Quick Status Pill */}
-            {ticket && (
-              <span className={`badge badge-status-${ticket.status.toLowerCase().replace(' ', '-')}`}>
-                {ticket.status}
-              </span>
-            )}
-          </div>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700, color: '#818cf8' }}>
+            {ticket?.ticket_number}
+          </span>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+            {ticket?.subject}
+          </h2>
+
+          {/* Quick Status Pill */}
+          {ticket && (
+            <span className={`badge badge-status-${ticket.status.toLowerCase().replace(' ', '-')}`}>
+              {ticket.status}
+            </span>
+          )}
+        </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {/* Quick Status Selector */}
@@ -645,6 +679,5 @@ export function AdminTicketWorkspace({ ticketId, isOpen, onClose, onTicketUpdate
           </div>
         </div>
       </div>
-    </div>
   );
 }

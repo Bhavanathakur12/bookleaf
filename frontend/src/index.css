@@ -735,11 +735,35 @@ button, input, select, textarea {
 }
 
 /* ==========================================================================
-   Admin Workspace Responsive Grid (Phase 3)
+   Admin Workspace Full-Width Dedicated Page
    ========================================================================== */
+.admin-workspace-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.admin-workspace-header {
+  padding: 0.85rem 1.75rem;
+  background: #0e1626;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
 .admin-workspace-grid {
   display: grid;
-  grid-template-columns: 290px 1fr 280px;
+  grid-template-columns: 310px 1fr 310px;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -758,19 +782,19 @@ button, input, select, textarea {
 .admin-workspace-col-dossier {
   background: #f8fafc;
   border-right: 1px solid var(--border-subtle);
-  padding: 1.25rem;
+  padding: 1.5rem;
   gap: 1.25rem;
 }
 
 .admin-workspace-col-thread {
-  padding: 1.25rem;
+  padding: 1.5rem 2rem;
   background: #ffffff;
 }
 
 .admin-workspace-col-notes {
   background: #f8fafc;
   border-left: 1px solid var(--border-subtle);
-  padding: 1.25rem;
+  padding: 1.5rem;
   gap: 1rem;
 }
 
