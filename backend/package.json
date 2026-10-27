@@ -1,0 +1,26 @@
+{
+  "name": "bookleaf-portal-backend",
+  "version": "1.0.0",
+  "description": "BookLeaf Publishing Author Support & Communication Portal API",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/db/seed.js",
+    "test": "node test/api.test.js && node test/ai.test.js && node test/seven-scenarios.test.js && node test/profile.test.js && node test/lifecycle.test.js",
+    "test:ai": "node test/ai.test.js",
+    "test:scenarios": "node test/seven-scenarios.test.js",
+    "test:profile": "node test/profile.test.js",
+    "test:lifecycle": "node test/lifecycle.test.js",
+    "test:e2e": "node test/e2e.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.24.6"
+  }
+}

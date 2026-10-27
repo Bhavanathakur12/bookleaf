@@ -25,7 +25,7 @@ BookLeaf Publishing handles 1,200+ books monthly across a catalog of 22,000+ tit
 This system delivers a purpose-built solution featuring:
 - **Author Portal (Author-Facing):** Email authentication, book catalog inspection with sales and royalty tracking, query submission with AI auto-tagging, and live conversation thread updates.
 - **Admin Operations Portal (Admin-Facing):** Unified queue with smart urgency prioritization, visual markers for SLA-breaching and oldest unresolved tickets, AI auto-classification, AI priority scoring, BookLeaf Knowledge Base–grounded response drafting, confidential internal notes, and one-click classification/priority overrides.
-- **Full Data Integrity (No Hardcoded Data):** Fully normalized SQLite relational database dynamically seeded from `bookleaf_sample_data.json` (10 authors, 18 books).
+- **Full Data Integrity (No Hardcoded Data):** Fully normalized MySQL 8.x relational database with connection pooling, transactional consistency, and foreign key cascades. Pre-seeded from `bookleaf_sample_data.json` (10 authors, 18 books), with existing SQLite archives safely preserved.
 
 ---
 
@@ -33,32 +33,32 @@ This system delivers a purpose-built solution featuring:
 
 | Requirement | Implementation | Location |
 |---|---|---|
-| **Author Authentication** | Email/Password login, JWT session tokens, RBAC middleware | `server/src/routes/auth.js` |
-| **Author "My Books"** | Displays title, ISBN, genre, pub date, status, MRP, sold copies, earned/paid/pending royalties, platforms, and print partners | `client/src/components/AuthorPortal/MyBooks.jsx` |
-| **Submit Support Query** | Dynamic book dropdown + General Level, subject, description, file attachment preview | `client/src/components/AuthorPortal/SubmitTicketModal.jsx` |
-| **Real-Time Ticket Threads** | Near-real-time polling + Server-Sent Events (SSE). Authors see admin replies without refreshing | `client/src/components/AuthorPortal/TicketThreadModal.jsx` |
-| **Admin Ticket Queue** | Filterable by status, category, priority, and submission date. Urgency sorting spots critical/oldest unresolved queries | `client/src/components/AdminPortal/AdminDashboard.jsx` |
-| **AI Auto-Classification** | Classifies incoming tickets into one of the 6 canonical categories with admin override | `server/src/ai/aiService.js` |
-| **AI Priority Scoring** | Computes Critical / High / Medium / Low score with transparent rationale and admin override | `server/src/ai/aiService.js` |
-| **AI-Drafted Response** | Grounded strictly in official BookLeaf policies (80/20 split, quarterly cycle, reprint guarantee, stock sync) | `server/src/ai/aiService.js` |
-| **Ticket Management** | Status transitions, assignee management, and confidential internal notes (strictly hidden from authors) | `client/src/components/AdminPortal/AdminTicketWorkspace.jsx` |
-| **API Layer & Security** | RESTful conventions, role-based middleware, input validation, and interactive OpenAPI modal | `server/src/routes/` |
+| **Author Authentication** | Email/Password login, JWT session tokens, RBAC middleware | `backend/src/routes/auth.js` |
+| **Author "My Books"** | Displays title, ISBN, genre, pub date, status, MRP, sold copies, earned/paid/pending royalties, platforms, and print partners | `frontend/src/components/AuthorPortal/MyBooks.jsx` |
+| **Submit Support Query** | Dynamic book dropdown + General Level, subject, description, file attachment preview | `frontend/src/components/AuthorPortal/SubmitTicketModal.jsx` |
+| **Real-Time Ticket Threads** | Near-real-time polling + Server-Sent Events (SSE). Authors see admin replies without refreshing | `frontend/src/components/AuthorPortal/TicketThreadModal.jsx` |
+| **Admin Ticket Queue** | Filterable by status, category, priority, and submission date. Urgency sorting spots critical/oldest unresolved queries | `frontend/src/components/AdminPortal/AdminDashboard.jsx` |
+| **AI Auto-Classification** | Classifies incoming tickets into one of the 6 canonical categories with admin override | `backend/src/ai/aiService.js` |
+| **AI Priority Scoring** | Computes Critical / High / Medium / Low score with transparent rationale and admin override | `backend/src/ai/aiService.js` |
+| **AI-Drafted Response** | Grounded strictly in official BookLeaf policies (80/20 split, quarterly cycle, reprint guarantee, stock sync) | `backend/src/ai/aiService.js` |
+| **Ticket Management** | Status transitions, assignee management, and confidential internal notes (strictly hidden from authors) | `frontend/src/components/AdminPortal/AdminTicketWorkspace.jsx` |
+| **API Layer & Security** | RESTful conventions, role-based middleware, input validation, and interactive OpenAPI modal | `backend/src/routes/` |
+| **Database Architecture** | MySQL 8.x with connection pool (`mysql2/promise`), foreign keys, and indexes | `backend/src/db/db.js` |
 
 ---
 
 ## 3. Architecture Decisions & Tech Stack Rationale
 
-### 3.1 Backend: Node.js + Express
+### 3.1 Backend: Node.js + Express + MySQL 8
 - **Framework:** Express 4.x chosen for predictable middleware composition, native REST routing, and zero overhead.
-- **Database:** `better-sqlite3` (SQLite in WAL mode). SQLite was selected because:
-  - It runs in-process with zero external service dependencies (no Docker or external database instance required to evaluate).
-  - It enforces strict relational integrity with foreign keys, cascaded deletes, and transactions.
-  - It eliminates all hardcoded data: every single author, book, platform, ticket, message, and note is dynamically queried from relational tables.
+- **Database Engine:** MySQL 8.x with `mysql2/promise` connection pooling (`InnoDB` engine, `utf8mb4` charset):
+  - Enforces strict relational integrity with foreign keys (`ON DELETE CASCADE`, `ON DELETE SET NULL`), unique constraints, and B-tree indexes.
+  - Connection pooling with `waitForConnections: true` and `connectionLimit: 10` for high-throughput concurrency.
 - **Security:** `bcryptjs` for salted password hashing; `jsonwebtoken` (JWT) for stateless role-based authentication.
 
 ### 3.2 Frontend: React + Vite + Vanilla CSS
 - **Framework:** React 19 with Vite for instant Hot Module Replacement (HMR).
-- **Styling:** Custom Vanilla CSS design system (`Outfit` for editorial brand headers, `Plus Jakarta Sans` for body, `JetBrains Mono` for IDs) with glassmorphism, glowing urgency pills, and smooth transitions. Avoided heavy component frameworks to maintain maximum design control and zero bundle bloat.
+- **Styling:** Custom Vanilla CSS design system (`Outfit` for editorial brand headers, `Plus Jakarta Sans` for body, `JetBrains Mono` for IDs) with clean light theme, glowing urgency pills, and smooth transitions.
 - **Real-Time Strategy:** Hybrid model combining Server-Sent Events (SSE) `/api/events` and resilient short polling (every 3-4s) so updates arrive with zero latency across all network conditions.
 
 ---
@@ -85,48 +85,94 @@ Prompts and fallback engines are grounded directly in official BookLeaf policies
 - Structured JSON outputs (`temperature: 0.1` for classification; `0.3` for draft generation) keep token usage minimal and predictable.
 
 ### 4.4 Model Choice Justification
-- **Gemini 1.5 Flash / GPT-4o-mini:** Ideal balance of low latency (<600ms), sub-cent cost per inquiry, and exceptional instruction-following capability for policy-grounded drafting.
+- **Gemini 3.6 Flash / GPT-4o-mini:** `gemini-3.6-flash` is configured by default via `GEMINI_MODEL`, offering exceptional reasoning speed, high quality adherence to structured response guidelines, sub-cent cost per ticket, and low latency for policy-grounded drafting. Backward compatibility with `gemini-1.5-flash` and `gpt-4o-mini` is fully supported.
 
 ---
 
-## 5. Quickstart & Setup Instructions
+## 5. MySQL Setup & Quickstart Guide
 
 ### Prerequisites
 - Node.js v18+ (tested on Node v22.14)
-- npm v9+
+- MySQL Server 8.0+ or WampServer (MySQL 8.0.31) running on port `3306`
 
-### 1-Step Dev Launch
-From the root directory:
+### 5.1 MySQL Database Creation
+From your terminal or MySQL command line:
+```sql
+CREATE DATABASE IF NOT EXISTS bookleaf CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 5.2 Environment Configuration
+In `backend/.env`:
+```env
+PORT=4000
+JWT_SECRET=bookleaf-secret-key-2026-secure-token
+
+# MySQL Connection Details
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=bookleaf
+```
+
+### 5.3 MySQL Schema Initialization & Seeding
 ```bash
-# 1. Install all dependencies (root, server, and client)
-npm run install:all # or run npm install in root, server, and client
-
-# 2. Seed database with the 10 authors and 18 books
+# Seed MySQL from bookleaf_sample_data.json (10 authors, 18 books):
 npm run seed
+```
 
-# 3. Start development server (both backend on :4000 and frontend on :5173)
+### 5.4 1-Step Dev Launch
+```bash
+# Start backend (port 4000) and frontend (port 5173) concurrently:
 npm run dev
 ```
 
-### Accessing the Application
-- **Frontend App:** [http://localhost:5173](http://localhost:5173) (or [http://localhost:4000](http://localhost:4000) for production build)
-- **API Health:** [http://localhost:4000/api/health](http://localhost:4000/api/health)
+### 5.5 Inspecting with MySQL Workbench
+1. Open **MySQL Workbench**.
+2. Click **+** next to MySQL Connections to add a new connection:
+   - **Connection Name:** `BookLeaf Local`
+   - **Hostname:** `127.0.0.1` (or `localhost`)
+   - **Port:** `3306`
+   - **Username:** `root`
+   - **Password:** (Leave blank if default WAMP / enter your root password)
+3. Click **Test Connection** &rarr; **OK**.
+4. In the left **Navigator** pane, expand **Schemas** &rarr; `bookleaf` &rarr; **Tables**:
+   - `authors`: 10 rows
+   - `books`: 18 rows
+   - `users`: 12 rows (2 admins + 10 authors)
+   - `tickets`: Author support tickets with AI classification & priorities
+   - `ticket_messages`: Chronological conversation threads
+   - `ticket_internal_notes`: Confidential admin-only notes
+5. Run inspection queries:
+   ```sql
+   USE bookleaf;
+   SELECT * FROM authors;
+   SELECT title, mrp, total_copies_sold, total_royalty_earned FROM books;
+   SELECT ticket_number, author_id, subject, category, priority, status FROM tickets;
+   ```
+
+### 5.6 Accessing the Application
+- **Frontend App:** [http://localhost:5173](http://localhost:5173)
+- **API Health:** [http://localhost:4000/api/health](http://localhost:4000/api/health) (Shows `database: "connected (MySQL)"`)
 - **API Specification:** [http://localhost:4000/api/docs/spec](http://localhost:4000/api/docs/spec)
 
-### Running Verification Tests
+### 5.7 Running Verification Tests
 ```bash
-# Run unit & heuristic verification
-npm run test --prefix server
+# Run unit & invariant verification suite on MySQL
+npm test
 
-# Run end-to-end integration test (14 automated scenarios)
-node server/test/e2e.test.js
+# Run comprehensive end-to-end HTTP integration test on MySQL (18 scenarios)
+npm run test:e2e
 ```
+
+### Deliverables & Write-Up
+- **Assignment Technical Write-Up (1-Page):** See [BOOKLEAF_TECHNICAL_WRITEUP.md](BOOKLEAF_TECHNICAL_WRITEUP.md) for architectural trade-offs, design choices, and production evolution.
 
 ---
 
 ## 6. Pre-Seeded Test Credentials
 
-Use the **"Instant 1-Click Evaluator Logins"** buttons on the login page or the **"Switch Role"** menu in the top bar to test any account instantly.
+Enter the evaluator credentials below into the standard email/password login form to test any account:
 
 | Account Type | Email | Password | Details |
 |---|---|---|---|
