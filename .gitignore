@@ -6,6 +6,4 @@ dist/
 *.db-wal
 .env
 **/.env
-.agents/
-skills-lock.json
 
