@@ -93,6 +93,15 @@ async function startServer() {
   try {
     await initDatabase();
     console.log('[BookLeaf Server] MySQL schema initialized successfully.');
+
+    // Auto-seed if newly initialized database is empty (e.g. fresh cloud deployment)
+    const [[{ count: authorCount }]] = await db.query('SELECT COUNT(*) as count FROM authors').catch(() => [[{ count: 0 }]]);
+    if (Number(authorCount) === 0) {
+      console.log('[BookLeaf Server] Database is empty. Seeding initial dataset from sample data...');
+      const { runSeed } = await import('./db/seed.js');
+      await runSeed();
+    }
+
     app.listen(PORT, () => {
       console.log(`[BookLeaf Server] Running on http://localhost:${PORT}`);
       console.log(`[BookLeaf Server] API documentation available at http://localhost:${PORT}/api/docs/spec`);

@@ -8,17 +8,31 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'bookleaf',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  decimalNumbers: true
-});
+const dbUri = process.env.DATABASE_URL || process.env.MYSQL_URL;
+
+const poolConfig = dbUri
+  ? {
+      uri: dbUri,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      decimalNumbers: true,
+      ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
+    }
+  : {
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT) || 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'bookleaf',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      decimalNumbers: true,
+      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+    };
+
+const pool = mysql.createPool(poolConfig);
 
 export async function initDatabase() {
   const conn = await pool.getConnection();
