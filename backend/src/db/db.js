@@ -9,6 +9,15 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const dbUri = process.env.DATABASE_URL || process.env.MYSQL_URL;
+const isRailwayInternal = dbUri && (dbUri.includes('railway.internal') || dbUri.includes('localhost'));
+
+const sslSetting = process.env.DB_SSL === 'true'
+  ? { rejectUnauthorized: false }
+  : (process.env.DB_SSL === 'false' || isRailwayInternal)
+    ? undefined
+    : (dbUri && !isRailwayInternal)
+      ? { rejectUnauthorized: false }
+      : undefined;
 
 const poolConfig = dbUri
   ? {
@@ -17,19 +26,19 @@ const poolConfig = dbUri
       connectionLimit: 10,
       queueLimit: 0,
       decimalNumbers: true,
-      ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
+      ssl: sslSetting
     }
   : {
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT) || 3306,
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'bookleaf',
+      host: process.env.DB_HOST || process.env.MYSQLHOST || 'localhost',
+      port: Number(process.env.DB_PORT || process.env.MYSQLPORT) || 3306,
+      user: process.env.DB_USER || process.env.MYSQLUSER || 'root',
+      password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || '',
+      database: process.env.DB_NAME || process.env.MYSQLDATABASE || 'bookleaf',
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
       decimalNumbers: true,
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+      ssl: sslSetting
     };
 
 const pool = mysql.createPool(poolConfig);
