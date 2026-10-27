@@ -140,6 +140,71 @@ export function LoginView() {
             <ArrowRight size={16} />
           </button>
         </form>
+
+        {/* 1-Click Quick Demo Accounts */}
+        <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.6rem', textAlign: 'center' }}>
+            Quick Demo Accounts (1-Click Fill)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <button
+              id="btn-demo-admin"
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.725rem', padding: '0.45rem 0.5rem', justifyContent: 'center' }}
+              onClick={() => {
+                setEmail('admin@bookleafpublishing.com');
+                setPassword('admin123');
+                setError('');
+              }}
+              title="admin@bookleafpublishing.com / admin123"
+            >
+              🛡️ Admin
+            </button>
+            <button
+              id="btn-demo-support"
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.725rem', padding: '0.45rem 0.5rem', justifyContent: 'center' }}
+              onClick={() => {
+                setEmail('support@bookleafpublishing.com');
+                setPassword('support123');
+                setError('');
+              }}
+              title="support@bookleafpublishing.com / support123"
+            >
+              🛡️ Support Lead
+            </button>
+            <button
+              id="btn-demo-priya"
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.725rem', padding: '0.45rem 0.5rem', justifyContent: 'center' }}
+              onClick={() => {
+                setEmail('priya.sharma@email.com');
+                setPassword('priya123');
+                setError('');
+              }}
+              title="priya.sharma@email.com / priya123"
+            >
+              👤 Priya (Author)
+            </button>
+            <button
+              id="btn-demo-rohit"
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.725rem', padding: '0.45rem 0.5rem', justifyContent: 'center' }}
+              onClick={() => {
+                setEmail('rohit.kapoor@email.com');
+                setPassword('rohit123');
+                setError('');
+              }}
+              title="rohit.kapoor@email.com / rohit123"
+            >
+              👤 Rohit (Author)
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
